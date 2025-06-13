@@ -2,8 +2,7 @@
     "name": "EncryptionTransportEditor",
     "rootNamespace": "",
     "references": [
-        "GUID:627104647b9c04b4ebb8978a92ecac63",
-        "Mirror.Transports"
+        "GUID:627104647b9c04b4ebb8978a92ecac63"
     ],
     "includePlatforms": [
         "Editor"
