@@ -37,29 +37,4 @@ public class CustomNetworkManager : NetworkManager
         }
         ServerChangeScene(SceneName);
     }
-    
-    // ✅ 추가된 부분: 클라이언트 연결 끊김 처리
-    public override void OnClientDisconnect()
-    {
-        base.OnClientDisconnect();
-        Debug.Log("Disconnected from server. Cleaning up.");
-
-        // UI를 메인 메뉴 상태로 되돌림
-        if (LobbyListManager.instance != null)
-        {
-            LobbyListManager.instance.ShowMainMenuButtons();
-        }
-        
-        // 로비 컨트롤러 상태 초기화
-        if (LobbyController.Instance != null)
-        {
-            LobbyController.Instance.ClearLobby();
-        }
-
-        // 현재 Steam 로비에서 나감
-        if (SteamLobby.Instance != null && SteamLobby.Instance.CurrentLobbyID != 0)
-        {
-            SteamLobby.Instance.LeaveLobby();
-        }
-    }
 }

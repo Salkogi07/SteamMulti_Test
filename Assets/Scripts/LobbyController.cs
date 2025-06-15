@@ -15,12 +15,12 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
     //UI Elements
     public Text LobbyNameText;
     public Button LeaveLobbyButton;
-    public GameObject LoadingScreen;
+    public GameObject LoadingScreen; // 로딩 화면 UI 참조는 그대로 둡니다.
 
     //Player Data
     public GameObject PlayerListViewContent;
     public GameObject PlayerListItemPrefab;
-    public GameObject LocalPlayerObject;
+    public GameObject LocalPlayerObject; // 이 참조는 이제 사용되지 않지만, 다른 곳에서 쓸 수 있으니 일단 둡니다.
 
     //Other Data
     public ulong CurrentLobbyID;
@@ -48,30 +48,9 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
     {
         if (Instance == null) { Instance = this; }
     }
-    
-    // ✅ 추가된 부분: 로비 UI 상태를 초기화하는 함수
-    public void ClearLobby()
-    {
-        PlayerItemCreated = false;
-        CurrentLobbyID = 0;
-        LobbyNameText.text = "Lobby";
-        if (LeaveLobbyButton != null) LeaveLobbyButton.gameObject.SetActive(false);
-        if (StartGameButton != null) StartGameButton.interactable = false;
-        
-        // 플레이어 리스트 UI 정리
-        foreach (var item in PlayerListItems)
-        {
-            Destroy(item.gameObject);
-        }
-        PlayerListItems.Clear();
-
-        LocalplayerController = null;
-        LocalPlayerObject = null;
-    }
 
     public void ReadyPlayer()
     {
-        // LocalplayerController가 null이 아닐 때만 실행
         if (LocalplayerController != null)
         {
             LocalplayerController.ChangeReady();
@@ -81,17 +60,7 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
     public void UpdateButton()
     {
         if (LocalplayerController == null) return;
-        // ✅ 수정된 부분: bool 값에 따라 텍스트를 바로 변경
         ReadyButtonText.text = LocalplayerController.Ready ? "Unready" : "Ready";
-    }
-    
-    // ✅ 추가된 부분: LeaveLobbyButton의 OnClick 이벤트에 연결할 함수
-    public void OnClick_LeaveLobby()
-    {
-        if (SteamLobby.Instance != null)
-        {
-            SteamLobby.Instance.LeaveLobby();
-        }
     }
 
     public void CheckIfAllReady()
@@ -103,20 +72,18 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
         }
 
         bool allReady = Manager.GamePlayers.All(player => player.Ready);
-        
+
         if (StartGameButton != null)
         {
-            // ✅ 수정된 부분: 호스트(PlayerIdNumber == 1)이고 모두 준비되었을 때만 시작 버튼 활성화
-            StartGameButton.interactable = allReady && Manager.GamePlayers.Count > 0 && LocalplayerController.PlayerIdNumber == 1;
+            StartGameButton.interactable = allReady && LocalplayerController.PlayerIdNumber == 1;
         }
     }
 
     public void UpdateLobbyName()
     {
-        // ✅ 수정된 부분: SteamLobby 인스턴스에서 CurrentLobbyID를 가져옴
-        if (SteamLobby.Instance == null || SteamLobby.Instance.CurrentLobbyID == 0) return;
+        if (Manager.GetComponent<SteamLobby>() == null || Manager.GetComponent<SteamLobby>().CurrentLobbyID == 0) return;
 
-        CurrentLobbyID = SteamLobby.Instance.CurrentLobbyID;
+        CurrentLobbyID = Manager.GetComponent<SteamLobby>().CurrentLobbyID;
         LobbyNameText.text = SteamMatchmaking.GetLobbyData(new CSteamID(CurrentLobbyID), "name");
         if (LeaveLobbyButton != null) LeaveLobbyButton.gameObject.SetActive(true);
     }
@@ -129,6 +96,8 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
         if (PlayerListItems.Count == Manager.GamePlayers.Count) { UpdatePlayerItem(); }
     }
 
+    // ✅ 삭제된 부분: 이 메서드는 더 이상 필요 없습니다.
+    /*
     public void FindLocalPlayer()
     {
         LocalPlayerObject = GameObject.Find("LocalGamePlayer");
@@ -137,7 +106,22 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
             LocalplayerController = LocalPlayerObject.GetComponent<PlayerObjectController>();
         }
     }
+    */
+    
+    // ✅ 추가된 부분: PlayerObjectController가 스스로를 등록하는 메서드
+    public void SetLocalPlayerController(PlayerObjectController controller)
+    {
+        LocalplayerController = controller;
+        if (LocalplayerController != null)
+        {
+            LocalPlayerObject = LocalplayerController.gameObject;
+            UpdateButton(); // 로컬 컨트롤러가 설정되었으니, 버튼 상태를 바로 업데이트합니다.
+        }
+    }
 
+    // (이하 다른 함수들은 이전과 동일)
+    // ...
+    
     public void CreateHostPlayerItem()
     {
         foreach (PlayerObjectController player in Manager.GamePlayers)

@@ -42,7 +42,6 @@ public class PlayerObjectController : NetworkBehaviour
 
     private void PlayerReadyUpdate(bool oldValue, bool newValue)
     {
-        // isClient: 모든 클라이언트에서 실행
         if (isClient)
         {
             LobbyController.Instance?.UpdatePlayerList();
@@ -60,20 +59,18 @@ public class PlayerObjectController : NetworkBehaviour
         if (authority)
         {
             CmdSetPlayerReady();
-            // ✅ 추가된 부분: 커맨드를 보낸 클라이언트에서 즉시 UI가 바뀌도록 함. (서버 응답을 기다리지 않음)
-            // 서버에서 SyncVar가 업데이트되면 다른 클라이언트들도 변경됨.
-            if(LobbyController.Instance != null)
-            {
-                LobbyController.Instance.UpdateButton();
-            }
         }
     }
 
     public override void OnStartAuthority()
     {
+        // 이 객체가 로컬 플레이어의 객체임을 의미합니다.
         CmdSetPlayerName(SteamFriends.GetPersonaName().ToString());
-        gameObject.name = "LocalGamePlayer";
-        LobbyController.Instance.FindLocalPlayer();
+        gameObject.name = "LocalGamePlayer"; // 디버깅을 위해 이름은 그대로 둡니다.
+        
+        // ✅ 수정된 부분: LobbyController에 자신을 직접 등록합니다.
+        LobbyController.Instance.SetLocalPlayerController(this);
+        
         LobbyController.Instance.UpdateLobbyName();
     }
 
@@ -91,12 +88,6 @@ public class PlayerObjectController : NetworkBehaviour
         {
             LobbyController.Instance.UpdatePlayerList();
         }
-        
-        // ✅ 추가된 부분: 로컬 플레이어가 나갈 때 LocalplayerController 참조를 null로 설정
-        if (authority && LobbyController.Instance != null && LobbyController.Instance.LocalplayerController == this)
-        {
-            LobbyController.Instance.LocalplayerController = null;
-        }
     }
 
     [Command]
@@ -113,6 +104,7 @@ public class PlayerObjectController : NetworkBehaviour
         }
     }
 
+    //Start Game
     public void CanStartGame(string SceneName)
     {
         if (authority)
