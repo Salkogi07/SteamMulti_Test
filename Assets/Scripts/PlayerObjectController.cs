@@ -57,6 +57,7 @@ public class PlayerObjectController : NetworkBehaviour
     // 로비의 "Ready" 버튼을 눌렀을 때 호출됩니다.
     public void ChangeReady()
     {
+        Debug.Log($"ChangeReady 호출됨. 이 객체의 authority 상태: {authority}");
         // 로컬 플레이어만이 자신의 상태를 변경할 수 있습니다.
         if (authority)
         {
@@ -64,13 +65,8 @@ public class PlayerObjectController : NetworkBehaviour
         }
     }
 
-    // PlayerObjectController.cs
-
     public override void OnStartAuthority()
     {
-        // 이 로그는 "클라이언트"의 콘솔 창에만 나타나야 합니다.
-        Debug.Log("OnStartAuthority가 호출되었습니다! 이제 이 객체에 대한 권한이 있습니다."); 
-    
         CmdSetPlayerName(SteamFriends.GetPersonaName().ToString());
         gameObject.name = "LocalGamePlayer";
         LobbyController.Instance.FindLocalPlayer();
