@@ -36,21 +36,13 @@ public class CustomNetworkManager : NetworkManager
         
         base.Awake();
     }
-
-    // ✅ 추가: 호스트 중지 시 로비 정리
-    public override void OnStopHost()
-    {
-        base.OnStopHost();
-    }
-
-    // ✅ 추가: 클라이언트 중지 시 로비 정리
+    
     public override void OnStopClient()
     {
-        GamePlayers.Clear(); // 클라이언트에서는 자신의 목록만 정리
+        GamePlayers.Clear();
         base.OnStopClient();
     }
     
-    // ✅ 추가: 서버에서 플레이어가 나갈 때 GamePlayers 리스트에서 제거
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
         if(conn.identity != null)
@@ -66,7 +58,7 @@ public class CustomNetworkManager : NetworkManager
 
     public void StartGame(string SceneName)
     {
-        // ✅ 추가: 게임 시작 전 로비 잠금
+        //게임 시작 전 로비 잠금
         SteamMatchmaking.SetLobbyJoinable(new CSteamID(SteamLobby.Instance.CurrentLobbyID), false);
         
         ServerChangeScene(SceneName);
