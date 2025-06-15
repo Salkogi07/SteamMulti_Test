@@ -64,8 +64,13 @@ public class PlayerObjectController : NetworkBehaviour
         }
     }
 
+    // PlayerObjectController.cs
+
     public override void OnStartAuthority()
     {
+        // 이 로그는 "클라이언트"의 콘솔 창에만 나타나야 합니다.
+        Debug.Log("OnStartAuthority가 호출되었습니다! 이제 이 객체에 대한 권한이 있습니다."); 
+    
         CmdSetPlayerName(SteamFriends.GetPersonaName().ToString());
         gameObject.name = "LocalGamePlayer";
         LobbyController.Instance.FindLocalPlayer();

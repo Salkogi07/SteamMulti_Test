@@ -52,21 +52,31 @@ public class SteamLobby : MonoBehaviour
 
     public void LeaveLobby()
     {
+        CSteamID currentOwner = SteamMatchmaking.GetLobbyOwner(new CSteamID(CurrentLobbyID));
+        CSteamID me = SteamUser.GetSteamID();
+        var lobby = new CSteamID(CurrentLobbyID);
+        List<CSteamID> members = new List<CSteamID>();
+
+        int count = SteamMatchmaking.GetNumLobbyMembers(lobby);
+
+        for (int i = 0; i < count; i++)
+        {
+            members.Add(SteamMatchmaking.GetLobbyMemberByIndex(lobby, i));
+        }
+
         if (CurrentLobbyID != 0)
         {
-            Debug.Log("Leaving lobby...");
             SteamMatchmaking.LeaveLobby(new CSteamID(CurrentLobbyID));
             CurrentLobbyID = 0;
-            
-            // 호스트인 경우 서버를 중지, 클라이언트인 경우 클라이언트를 중지
-            if (NetworkServer.active && NetworkClient.isConnected)
-            {
-                manager.StopHost();
-            }
-            else if (NetworkClient.isConnected)
-            {
-                manager.StopClient();
-            }
+        }
+
+        if (NetworkServer.active && currentOwner == me)
+        {
+            NetworkManager.singleton.StopHost();
+        }
+        else if (NetworkClient.isConnected)
+        {
+            NetworkManager.singleton.StopClient();
         }
     }
     
