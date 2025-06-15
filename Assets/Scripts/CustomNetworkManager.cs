@@ -15,14 +15,13 @@ public class CustomNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        if(onlineScene == "" || SceneManager.GetActiveScene().name == onlineScene)
+        if(SceneManager.GetActiveScene().name == "Lobby")
         {
             PlayerObjectController GamePlayerInstance = Instantiate(GamePlayerPrefab);
 
             GamePlayerInstance.ConnectionID = conn.connectionId;
             GamePlayerInstance.PlayerIdNumber = GamePlayers.Count + 1;
             
-            // ✅ 수정: SteamLobby 인스턴스에서 현재 로비 ID를 가져옴
             CSteamID lobbyId = new CSteamID(SteamLobby.Instance.CurrentLobbyID);
             int memberCount = SteamMatchmaking.GetNumLobbyMembers(lobbyId);
             GamePlayerInstance.PlayerSteamID = (ulong)SteamMatchmaking.GetLobbyMemberByIndex(lobbyId, memberCount - 1);
@@ -41,20 +40,12 @@ public class CustomNetworkManager : NetworkManager
     // ✅ 추가: 호스트 중지 시 로비 정리
     public override void OnStopHost()
     {
-        if (LobbyController.Instance != null)
-        {
-            LobbyController.Instance.ClearLobby();
-        }
         base.OnStopHost();
     }
 
     // ✅ 추가: 클라이언트 중지 시 로비 정리
     public override void OnStopClient()
     {
-        if (LobbyController.Instance != null)
-        {
-            LobbyController.Instance.ClearLobby();
-        }
         GamePlayers.Clear(); // 클라이언트에서는 자신의 목록만 정리
         base.OnStopClient();
     }
@@ -77,11 +68,7 @@ public class CustomNetworkManager : NetworkManager
     {
         // ✅ 추가: 게임 시작 전 로비 잠금
         SteamMatchmaking.SetLobbyJoinable(new CSteamID(SteamLobby.Instance.CurrentLobbyID), false);
-
-        foreach (var player in GamePlayers)
-        {
-            player.RpcShowLoadingScreen();
-        }
+        
         ServerChangeScene(SceneName);
     }
 }

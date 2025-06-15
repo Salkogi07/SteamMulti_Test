@@ -20,10 +20,9 @@ public class SteamLobby : MonoBehaviour
     protected Callback<LobbyMatchList_t> LobbyList;
     protected Callback<LobbyDataUpdate_t> LobbyDataUpdate;
     
-    // ✅ 추가: 로비 떠남 콜백
+    // 로비 떠남 콜백
     protected Callback<LobbyChatUpdate_t> LobbyChatUpdate;
-
-
+    
     List<CSteamID> lobbyIDs = new List<CSteamID>();
 
     //Variables
@@ -48,7 +47,6 @@ public class SteamLobby : MonoBehaviour
         LobbyList = Callback<LobbyMatchList_t>.Create(OnGetLobbyList);
         LobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(OnLobbyDataUpdate);
         
-        // ✅ 추가: 플레이어 떠남/입장 감지
         LobbyChatUpdate = Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdate);
     }
 
@@ -69,16 +67,9 @@ public class SteamLobby : MonoBehaviour
             {
                 manager.StopClient();
             }
-            
-            if (LobbyController.Instance != null && LobbyController.Instance.LeaveLobbyButton != null)
-            {
-                LobbyController.Instance.LeaveLobbyButton.gameObject.SetActive(false);
-                LobbyController.Instance.LobbyNameText.text = "Lobby";
-            }
         }
     }
-
-    // ✅ 수정: 로비 타입과 이름을 파라미터로 받음
+    
     public void HostLobby(ELobbyType lobbyType, string lobbyName)
     {
         currentLobbyName = lobbyName; // 로비 이름 저장
@@ -87,21 +78,15 @@ public class SteamLobby : MonoBehaviour
 
     private void OnLobbyCreated(LobbyCreated_t callback)
     {
-        if(callback.m_eResult != EResult.k_EResultOK) 
-        {
-            return; 
-        }
+        if(callback.m_eResult != EResult.k_EResultOK) { return; }
 
-        Debug.Log("Lobby created Successfully");
-        
+        Debug.Log("Lobby created Succesfully");
+
         manager.StartHost();
-        
-        CurrentLobbyID = callback.m_ulSteamIDLobby;
-        CSteamID lobbyId = new CSteamID(callback.m_ulSteamIDLobby);
 
-        SteamMatchmaking.SetLobbyData(lobbyId, HostAddressKey, SteamUser.GetSteamID().ToString());
-        // ✅ 수정: 저장된 로비 이름 사용
-        SteamMatchmaking.SetLobbyData(lobbyId, "name", currentLobbyName);
+        SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), HostAddressKey, SteamUser.GetSteamID().ToString());
+        SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "name", SteamFriends.GetPersonaName().ToString() + "'S LOBBY");
+        Debug.Log(SteamMatchmaking.GetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "name"));
     }
 
     private void OnJoinRequest(GameLobbyJoinRequested_t callback)
@@ -112,27 +97,21 @@ public class SteamLobby : MonoBehaviour
 
     private void OnLobbyEntered(LobbyEnter_t callback)
     {
+        //Everyone
         CurrentLobbyID = callback.m_ulSteamIDLobby;
 
-        // ✅ 추가: 로비 입장 시 UI 업데이트
-        if(LobbyController.Instance != null)
-        {
-            LobbyController.Instance.UpdateLobbyName();
-        }
-        
+        //Clients
         if(NetworkServer.active) { return; }
 
         manager.networkAddress = SteamMatchmaking.GetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), HostAddressKey);
+
         manager.StartClient();
     }
     
-    // ✅ 추가: 플레이어 떠남/입장 감지하여 PlayerList 업데이트 (클라이언트가 나갔을 때 호스트가 알 수 있도록)
     private void OnLobbyChatUpdate(LobbyChatUpdate_t callback)
     {
-        // 누군가 나가거나(Left), 들어오거나(Entered), 연결이 끊겼을 때(Disconnected)
         if ((EChatMemberStateChange)callback.m_rgfChatMemberStateChange != EChatMemberStateChange.k_EChatMemberStateChangeEntered)
         {
-            // 이 콜백은 모든 클라이언트에서 호출되므로 호스트만 처리하도록 합니다.
             if(NetworkServer.active)
             {
                 // 로비에 없는 플레이어를 서버에서 추방합니다.
@@ -140,8 +119,7 @@ public class SteamLobby : MonoBehaviour
             }
         }
     }
-
-    // ✅ 추가: 플레이어 연결 끊김 처리
+    
     private IEnumerator DelayedDisconnectCheck()
     {
         // Steam 정보가 업데이트될 시간을 약간 줍니다.

@@ -34,6 +34,8 @@ public class PlayerListItem : MonoBehaviour
         }
     }
 
+
+
     private void Start()
     {
         ImageLoaded = Callback<AvatarImageLoaded_t>.Create(OnImageLoaded);
@@ -86,4 +88,5 @@ public class PlayerListItem : MonoBehaviour
             return;
         }
     }
+
 }

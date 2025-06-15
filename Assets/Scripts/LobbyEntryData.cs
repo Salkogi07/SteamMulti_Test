@@ -29,5 +29,4 @@ public class LobbyEntryData : MonoBehaviour
     {
         SteamLobby.Instance.JoinLobby(lobbySteamID);
     }
-
 }
