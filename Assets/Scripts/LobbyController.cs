@@ -15,7 +15,7 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
     //UI Elements
     public Text LobbyNameText;
     public Button LeaveLobbyButton;
-    public GameObject LoadingScreen; // 로딩 화면 UI 참조는 그대로 둡니다.
+    public GameObject LoadingScreen;
 
     //Player Data
     public GameObject PlayerListViewContent;
@@ -48,16 +48,50 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
     {
         if (Instance == null) { Instance = this; }
     }
+    
+    // ✅ 추가된 부분: 로비 UI 상태를 초기화하는 함수
+    public void ClearLobby()
+    {
+        PlayerItemCreated = false;
+        CurrentLobbyID = 0;
+        LobbyNameText.text = "Lobby";
+        if (LeaveLobbyButton != null) LeaveLobbyButton.gameObject.SetActive(false);
+        if (StartGameButton != null) StartGameButton.interactable = false;
+        
+        // 플레이어 리스트 UI 정리
+        foreach (var item in PlayerListItems)
+        {
+            Destroy(item.gameObject);
+        }
+        PlayerListItems.Clear();
+
+        LocalplayerController = null;
+        LocalPlayerObject = null;
+    }
 
     public void ReadyPlayer()
     {
-        LocalplayerController.ChangeReady();
+        // LocalplayerController가 null이 아닐 때만 실행
+        if (LocalplayerController != null)
+        {
+            LocalplayerController.ChangeReady();
+        }
     }
 
     public void UpdateButton()
     {
         if (LocalplayerController == null) return;
+        // ✅ 수정된 부분: bool 값에 따라 텍스트를 바로 변경
         ReadyButtonText.text = LocalplayerController.Ready ? "Unready" : "Ready";
+    }
+    
+    // ✅ 추가된 부분: LeaveLobbyButton의 OnClick 이벤트에 연결할 함수
+    public void OnClick_LeaveLobby()
+    {
+        if (SteamLobby.Instance != null)
+        {
+            SteamLobby.Instance.LeaveLobby();
+        }
     }
 
     public void CheckIfAllReady()
@@ -69,18 +103,20 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
         }
 
         bool allReady = Manager.GamePlayers.All(player => player.Ready);
-
+        
         if (StartGameButton != null)
         {
-            StartGameButton.interactable = allReady && LocalplayerController.PlayerIdNumber == 1;
+            // ✅ 수정된 부분: 호스트(PlayerIdNumber == 1)이고 모두 준비되었을 때만 시작 버튼 활성화
+            StartGameButton.interactable = allReady && Manager.GamePlayers.Count > 0 && LocalplayerController.PlayerIdNumber == 1;
         }
     }
 
     public void UpdateLobbyName()
     {
-        if (Manager.GetComponent<SteamLobby>() == null || Manager.GetComponent<SteamLobby>().CurrentLobbyID == 0) return;
+        // ✅ 수정된 부분: SteamLobby 인스턴스에서 CurrentLobbyID를 가져옴
+        if (SteamLobby.Instance == null || SteamLobby.Instance.CurrentLobbyID == 0) return;
 
-        CurrentLobbyID = Manager.GetComponent<SteamLobby>().CurrentLobbyID;
+        CurrentLobbyID = SteamLobby.Instance.CurrentLobbyID;
         LobbyNameText.text = SteamMatchmaking.GetLobbyData(new CSteamID(CurrentLobbyID), "name");
         if (LeaveLobbyButton != null) LeaveLobbyButton.gameObject.SetActive(true);
     }

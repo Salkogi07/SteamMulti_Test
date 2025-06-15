@@ -42,6 +42,26 @@ public class SteamLobby : MonoBehaviour
         LobbyList = Callback<LobbyMatchList_t>.Create(OnGetLobbyList);
         LobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(OnLobbyDataUpdate);
     }
+    
+    // ✅ 추가된 부분: 로비에서 나가는 함수
+    public void LeaveLobby()
+    {
+        if (CurrentLobbyID != 0)
+        {
+            SteamMatchmaking.LeaveLobby(new CSteamID(CurrentLobbyID));
+            CurrentLobbyID = 0;
+            
+            // 호스트인 경우 서버를 중지, 클라이언트인 경우 클라이언트를 중지
+            if (NetworkServer.active && NetworkClient.isConnected)
+            {
+                manager.StopHost();
+            }
+            else if (NetworkClient.isConnected)
+            {
+                manager.StopClient();
+            }
+        }
+    }
 
     public void HostLobby()
     {
@@ -56,7 +76,7 @@ public class SteamLobby : MonoBehaviour
         
         manager.StartHost();
         
-        CurrentLobbyID = callback.m_ulSteamIDLobby; // Store lobby ID
+        CurrentLobbyID = callback.m_ulSteamIDLobby;
 
         SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), HostAddressKey, SteamUser.GetSteamID().ToString());
         SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "name", SteamFriends.GetPersonaName().ToString() + "'S LOBBY");
@@ -102,11 +122,9 @@ public class SteamLobby : MonoBehaviour
         for (int i = 0; i < friendCount; i++)
         {
             CSteamID friendSteamId = SteamFriends.GetFriendByIndex(i, EFriendFlags.k_EFriendFlagAll);
-
-            // 친구가 게임을 하고 있는지, 그리고 그 게임이 '우리 게임'인지 확인
+            
             if (SteamFriends.GetFriendGamePlayed(friendSteamId, out FriendGameInfo_t friendGameInfo) && friendGameInfo.m_gameID.AppID() == SteamUtils.GetAppID())
             {
-                // 친구가 로비에 있다면, 해당 로비 정보를 요청
                 if (friendGameInfo.m_steamIDLobby.IsValid())
                 {
                     Debug.Log($"Friend {SteamFriends.GetFriendPersonaName(friendSteamId)} is in a lobby. Requesting data.");

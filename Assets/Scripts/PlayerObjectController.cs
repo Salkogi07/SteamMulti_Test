@@ -31,12 +31,9 @@ public class PlayerObjectController : NetworkBehaviour
         DontDestroyOnLoad(this.gameObject);
     }
 
-    // ✅ 추가된 부분:
-    // 이 ClientRpc는 서버에 의해 호출되며, 이 PlayerObjectController가 속한 클라이언트에서 실행됩니다.
     [ClientRpc]
     public void RpcShowLoadingScreen()
     {
-        // LobbyController의 인스턴스를 찾아 로딩 화면을 활성화합니다.
         if (LobbyController.Instance != null && LobbyController.Instance.LoadingScreen != null)
         {
             LobbyController.Instance.LoadingScreen.SetActive(true);
@@ -45,6 +42,7 @@ public class PlayerObjectController : NetworkBehaviour
 
     private void PlayerReadyUpdate(bool oldValue, bool newValue)
     {
+        // isClient: 모든 클라이언트에서 실행
         if (isClient)
         {
             LobbyController.Instance?.UpdatePlayerList();
@@ -62,6 +60,12 @@ public class PlayerObjectController : NetworkBehaviour
         if (authority)
         {
             CmdSetPlayerReady();
+            // ✅ 추가된 부분: 커맨드를 보낸 클라이언트에서 즉시 UI가 바뀌도록 함. (서버 응답을 기다리지 않음)
+            // 서버에서 SyncVar가 업데이트되면 다른 클라이언트들도 변경됨.
+            if(LobbyController.Instance != null)
+            {
+                LobbyController.Instance.UpdateButton();
+            }
         }
     }
 
@@ -87,6 +91,12 @@ public class PlayerObjectController : NetworkBehaviour
         {
             LobbyController.Instance.UpdatePlayerList();
         }
+        
+        // ✅ 추가된 부분: 로컬 플레이어가 나갈 때 LocalplayerController 참조를 null로 설정
+        if (authority && LobbyController.Instance != null && LobbyController.Instance.LocalplayerController == this)
+        {
+            LobbyController.Instance.LocalplayerController = null;
+        }
     }
 
     [Command]
@@ -103,7 +113,6 @@ public class PlayerObjectController : NetworkBehaviour
         }
     }
 
-    //Start Game
     public void CanStartGame(string SceneName)
     {
         if (authority)

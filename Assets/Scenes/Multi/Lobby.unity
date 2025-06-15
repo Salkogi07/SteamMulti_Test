@@ -1296,7 +1296,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 140941595}
         m_TargetAssemblyTypeName: LobbyController, Assembly-CSharp
-        m_MethodName: LeaveLobby
+        m_MethodName: OnClick_LeaveLobby
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
