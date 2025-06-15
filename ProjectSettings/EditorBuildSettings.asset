@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Multi/Lobby.unity
     guid: 4a31743027ff3b24883194473b77f65e
+  - enabled: 1
+    path: Assets/Scenes/Multi/Game.unity
+    guid: 177ac16ca9ee90041a638d31fe79828a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

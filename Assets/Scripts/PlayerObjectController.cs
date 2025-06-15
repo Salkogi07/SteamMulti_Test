@@ -1,10 +1,10 @@
-using UnityEngine;
+// --- START OF FILE PlayerObjectController.cs ---
+
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 using Mirror;
 using Steamworks;
-
-//using Steamworks;
 
 public class PlayerObjectController : NetworkBehaviour
 {
@@ -21,10 +21,7 @@ public class PlayerObjectController : NetworkBehaviour
     {
         get
         {
-            if(manager != null)
-            {
-                return manager;
-            }
+            if(manager != null) { return manager; }
             return manager = CustomNetworkManager.singleton as CustomNetworkManager;
         }
     }
@@ -34,29 +31,37 @@ public class PlayerObjectController : NetworkBehaviour
         DontDestroyOnLoad(this.gameObject);
     }
 
+    // ✅ 추가된 부분:
+    // 이 ClientRpc는 서버에 의해 호출되며, 이 PlayerObjectController가 속한 클라이언트에서 실행됩니다.
+    [ClientRpc]
+    public void RpcShowLoadingScreen()
+    {
+        // LobbyController의 인스턴스를 찾아 로딩 화면을 활성화합니다.
+        if (LobbyController.Instance != null && LobbyController.Instance.LoadingScreen != null)
+        {
+            LobbyController.Instance.LoadingScreen.SetActive(true);
+        }
+    }
+
     private void PlayerReadyUpdate(bool oldValue, bool newValue)
     {
-        if (isServer)
-        {
-            this.Ready = newValue;
-        }
         if (isClient)
         {
-            LobbyController.Instance.UpdatePlayerList();
+            LobbyController.Instance?.UpdatePlayerList();
         }
     }
 
     [Command]
-    private void CMdSetPlayerReady()
+    private void CmdSetPlayerReady()
     {
-        this.PlayerReadyUpdate(this.Ready, !this.Ready);
+        this.Ready = !this.Ready;
     }
 
     public void ChangeReady()
     {
         if (authority)
         {
-            CMdSetPlayerReady();
+            CmdSetPlayerReady();
         }
     }
 
@@ -71,35 +76,32 @@ public class PlayerObjectController : NetworkBehaviour
     public override void OnStartClient()
     {
         Manager.GamePlayers.Add(this);
-        LobbyController.Instance.UpdateLobbyName();
-        LobbyController.Instance.UpdatePlayerList();
+        LobbyController.Instance?.UpdateLobbyName();
+        LobbyController.Instance?.UpdatePlayerList();
     }
 
     public override void OnStopClient()
     {
         Manager.GamePlayers.Remove(this);
-        LobbyController.Instance.UpdatePlayerList();
-    }
-
-    [Command]
-    public void CmdSetPlayerName(string PlayerName)
-    {
-        this.PlayerNameUpdate(this.PlayerName, PlayerName);
-    }
-
-    public void PlayerNameUpdate(string OldValue, string NewValue)
-    {
-        if (isServer)
-        {
-            this.PlayerName = NewValue;
-        }
-        if (isClient)
+        if (LobbyController.Instance != null)
         {
             LobbyController.Instance.UpdatePlayerList();
         }
     }
 
+    [Command]
+    private void CmdSetPlayerName(string PlayeName)
+    {
+        this.PlayerName = PlayeName;
+    }
 
+    public void PlayerNameUpdate(string OldValue, string NewValue)
+    {
+        if (isClient)
+        {
+            LobbyController.Instance?.UpdatePlayerList();
+        }
+    }
 
     //Start Game
     public void CanStartGame(string SceneName)

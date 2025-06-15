@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Steamworks;
@@ -14,16 +16,18 @@ public class PlayerListItem : MonoBehaviour
     public Text PlayerReadyText;
     public bool Ready;
 
+
     protected Callback<AvatarImageLoaded_t> ImageLoaded;
+
 
     public void ChangeReadyStatus()
     {
-        if (Ready)
+        if (Ready) //ready
         {
             PlayerReadyText.text = "Ready";
             PlayerReadyText.color = Color.green;
         }
-        else
+        else //not ready
         {
             PlayerReadyText.text = "Unready";
             PlayerReadyText.color = Color.red;
@@ -32,20 +36,21 @@ public class PlayerListItem : MonoBehaviour
 
     private void Start()
     {
-         ImageLoaded = Callback<AvatarImageLoaded_t>.Create(OnImageLoaded);
+        ImageLoaded = Callback<AvatarImageLoaded_t>.Create(OnImageLoaded);
     }
 
-    public void SetPlayerValues() 
+    public void SetPlayerValues()
     {
         PlayerNameText.text = PlayerName;
         ChangeReadyStatus();
         if (!AvatarReceived) { GetPlayerIcon(); }
     }
 
-    void GetPlayerIcon() 
+
+    void GetPlayerIcon()
     {
         int ImageID = SteamFriends.GetLargeFriendAvatar((CSteamID)PlayerSteamID);
-        if (ImageID == -1) { return; }
+        if(ImageID == -1) { return; }
         PlayerIcon.texture = GetSteamImageAsTexture(ImageID);
     }
 
@@ -70,14 +75,13 @@ public class PlayerListItem : MonoBehaviour
         AvatarReceived = true;
         return texture;
     }
-
     private void OnImageLoaded(AvatarImageLoaded_t callback)
     {
-        if(callback.m_steamID.m_SteamID == PlayerSteamID)
+        if(callback.m_steamID.m_SteamID == PlayerSteamID) //us
         {
             PlayerIcon.texture = GetSteamImageAsTexture(callback.m_iImage);
         }
-        else
+        else //another player
         {
             return;
         }

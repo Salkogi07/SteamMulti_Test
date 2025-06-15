@@ -1,3 +1,5 @@
+// --- START OF FILE CustomNetworkManager.cs ---
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,7 +15,7 @@ public class CustomNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        if(SceneManager.GetActiveScene().name == "Lobby")
+        if(SceneManager.GetActiveScene().name == "Lobby") // 혹은 onlineScene 이름
         {
             PlayerObjectController GamePlayerInstance = Instantiate(GamePlayerPrefab);
 
@@ -23,12 +25,14 @@ public class CustomNetworkManager : NetworkManager
 
             NetworkServer.AddPlayerForConnection(conn, GamePlayerInstance.gameObject);
         }
-
-
     }
 
     public void StartGame(string SceneName)
     {
+        foreach (var player in GamePlayers)
+        {
+            player.RpcShowLoadingScreen();
+        }
         ServerChangeScene(SceneName);
     }
 }
