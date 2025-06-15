@@ -8,19 +8,19 @@ using Steamworks;
 using UnityEngine.UI;
 using System.Linq;
 
-public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
+public class LobbyController : MonoBehaviour
 {
     public static LobbyController Instance;
 
     //UI Elements
     public Text LobbyNameText;
     public Button LeaveLobbyButton;
-    public GameObject LoadingScreen; // 로딩 화면 UI 참조는 그대로 둡니다.
+    public GameObject LoadingScreen;
 
     //Player Data
     public GameObject PlayerListViewContent;
     public GameObject PlayerListItemPrefab;
-    public GameObject LocalPlayerObject; // 이 참조는 이제 사용되지 않지만, 다른 곳에서 쓸 수 있으니 일단 둡니다.
+    public GameObject LocalPlayerObject;
 
     //Other Data
     public ulong CurrentLobbyID;
@@ -49,6 +49,12 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
         if (Instance == null) { Instance = this; }
     }
 
+    // ✅ 추가: LeaveLobby 버튼 클릭 이벤트 핸들러
+    public void OnClick_LeaveLobby()
+    {
+        SteamLobby.Instance.LeaveLobby();
+    }
+
     public void ReadyPlayer()
     {
         if (LocalplayerController != null)
@@ -71,11 +77,18 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
             return;
         }
 
+        // ✅ 수정: 방장이 아니면 시작 버튼을 항상 비활성화 하도록 명확히 함
+        if (LocalplayerController.PlayerIdNumber != 1)
+        {
+             if (StartGameButton != null) StartGameButton.interactable = false;
+             return;
+        }
+
         bool allReady = Manager.GamePlayers.All(player => player.Ready);
 
         if (StartGameButton != null)
         {
-            StartGameButton.interactable = allReady && LocalplayerController.PlayerIdNumber == 1;
+            StartGameButton.interactable = allReady;
         }
     }
 
@@ -87,6 +100,22 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
         LobbyNameText.text = SteamMatchmaking.GetLobbyData(new CSteamID(CurrentLobbyID), "name");
         if (LeaveLobbyButton != null) LeaveLobbyButton.gameObject.SetActive(true);
     }
+    
+    // ✅ 추가: 로비에서 나갈 때 UI 초기화
+    public void ClearLobby()
+    {
+        PlayerItemCreated = false;
+        foreach (var item in PlayerListItems)
+        {
+            Destroy(item.gameObject);
+        }
+        PlayerListItems.Clear();
+        if (StartGameButton != null) StartGameButton.interactable = false;
+        if (LeaveLobbyButton != null) LeaveLobbyButton.gameObject.SetActive(false);
+        LocalplayerController = null;
+        LocalPlayerObject = null;
+    }
+
 
     public void UpdatePlayerList()
     {
@@ -95,32 +124,16 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
         if (PlayerListItems.Count > Manager.GamePlayers.Count) { RemovePlayerItem(); }
         if (PlayerListItems.Count == Manager.GamePlayers.Count) { UpdatePlayerItem(); }
     }
-
-    // ✅ 삭제된 부분: 이 메서드는 더 이상 필요 없습니다.
-    /*
-    public void FindLocalPlayer()
-    {
-        LocalPlayerObject = GameObject.Find("LocalGamePlayer");
-        if (LocalPlayerObject != null)
-        {
-            LocalplayerController = LocalPlayerObject.GetComponent<PlayerObjectController>();
-        }
-    }
-    */
     
-    // ✅ 추가된 부분: PlayerObjectController가 스스로를 등록하는 메서드
     public void SetLocalPlayerController(PlayerObjectController controller)
     {
         LocalplayerController = controller;
         if (LocalplayerController != null)
         {
             LocalPlayerObject = LocalplayerController.gameObject;
-            UpdateButton(); // 로컬 컨트롤러가 설정되었으니, 버튼 상태를 바로 업데이트합니다.
+            UpdateButton(); 
         }
     }
-
-    // (이하 다른 함수들은 이전과 동일)
-    // ...
     
     public void CreateHostPlayerItem()
     {
@@ -206,7 +219,8 @@ public class LobbyController : MonoBehaviour // NetworkBehaviour 상속 제거
 
     public void StartGame(string SceneName)
     {
-        if (LocalplayerController != null)
+        // ✅ 수정: 방장만 게임 시작 가능
+        if (LocalplayerController != null && LocalplayerController.PlayerIdNumber == 1)
         {
             LocalplayerController.CanStartGame(SceneName);
         }

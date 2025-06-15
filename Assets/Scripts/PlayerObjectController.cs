@@ -34,9 +34,14 @@ public class PlayerObjectController : NetworkBehaviour
     [ClientRpc]
     public void RpcShowLoadingScreen()
     {
-        if (LobbyController.Instance != null && LobbyController.Instance.LoadingScreen != null)
+        // 로비 UI를 숨기고 로딩 화면을 보여주도록 수정
+        if (LobbyController.Instance != null)
         {
-            LobbyController.Instance.LoadingScreen.SetActive(true);
+            LobbyController.Instance.gameObject.SetActive(false); // 로비 UI 전체 비활성화
+            if (LobbyController.Instance.LoadingScreen != null)
+            {
+                LobbyController.Instance.LoadingScreen.SetActive(true);
+            }
         }
     }
 
@@ -44,7 +49,7 @@ public class PlayerObjectController : NetworkBehaviour
     {
         if (isClient)
         {
-            LobbyController.Instance?.UpdatePlayerList();
+            LobbyController.Instance?.UpdatePlayerItem();
         }
     }
 
@@ -56,24 +61,18 @@ public class PlayerObjectController : NetworkBehaviour
 
     public void ChangeReady()
     {
-        Debug.Log("Changing Out IF Ready");
-        
         if (authority)
         {
-            Debug.Log("Changing Ready");
             CmdSetPlayerReady();
         }
     }
 
     public override void OnStartAuthority()
     {
-        // 이 객체가 로컬 플레이어의 객체임을 의미합니다.
         CmdSetPlayerName(SteamFriends.GetPersonaName().ToString());
-        gameObject.name = "LocalGamePlayer"; // 디버깅을 위해 이름은 그대로 둡니다.
+        gameObject.name = "LocalGamePlayer";
         
-        // ✅ 수정된 부분: LobbyController에 자신을 직접 등록합니다.
         LobbyController.Instance.SetLocalPlayerController(this);
-        
         LobbyController.Instance.UpdateLobbyName();
     }
 
@@ -86,8 +85,18 @@ public class PlayerObjectController : NetworkBehaviour
 
     public override void OnStopClient()
     {
-        Manager.GamePlayers.Remove(this);
-        if (LobbyController.Instance != null)
+        // ✅ 수정: 로컬 플레이어가 나갈 때만 처리하도록 변경
+        if (isLocalPlayer)
+        {
+            Manager.GamePlayers.Remove(this);
+            if (LobbyController.Instance != null)
+            {
+                LobbyController.Instance.UpdatePlayerList();
+            }
+        }
+        
+        // 방장이 나갔을 때 모든 클라이언트의 플레이어 리스트 업데이트
+        if (LobbyController.Instance != null && isClientOnly)
         {
             LobbyController.Instance.UpdatePlayerList();
         }
@@ -103,11 +112,10 @@ public class PlayerObjectController : NetworkBehaviour
     {
         if (isClient)
         {
-            LobbyController.Instance?.UpdatePlayerList();
+            LobbyController.Instance?.UpdatePlayerItem();
         }
     }
 
-    //Start Game
     public void CanStartGame(string SceneName)
     {
         if (authority)
