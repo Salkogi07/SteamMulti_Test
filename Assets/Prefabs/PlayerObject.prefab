@@ -176,7 +176,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   Speed: 0.1
-  PlayerModel: {fileID: 0}
+  PlayerModel: {fileID: 7291246488426998748}
 --- !u!114 &5495080067199191106
 MonoBehaviour:
   m_ObjectHideFlags: 0
