@@ -33,6 +33,23 @@ public class PlayerObjectController : NetworkBehaviour
     {
         DontDestroyOnLoad(this.gameObject);
     }
+    
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+
+        // 호스트의 플레이어 객체는 기본값인 ServerToClient syncDirection을 유지합니다.
+        // 원격 클라이언트의 플레이어 객체는 ClientToServer로 설정하여, 해당 클라이언트가 자신의 객체에 대한
+        // 권한(authority)을 갖고 Command를 호출할 수 있도록 합니다.
+        // connectionToClient는 이 객체의 소유자에 대한 연결이며,
+        // NetworkServer.localConnection은 호스트 자신(로컬 클라이언트)에 대한 연결을 나타냅니다.
+        if (connectionToClient != NetworkServer.localConnection)
+        {
+            // 이 객체는 원격 클라이언트의 플레이어 객체이므로 syncDirection을 변경합니다.
+            syncDirection = SyncDirection.ClientToServer;
+        }
+    }
+
 
     // ✅ 수정: Ready 상태가 변경될 때 클라이언트에서 호출되는 Hook
     private void PlayerReadyUpdate(bool oldValue, bool newValue)
